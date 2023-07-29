@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <nvboard.h>
+#include "nvboard_conf.h"
 #include <stdlib.h>
 #include <sys/time.h>
 #include <assert.h>
@@ -86,18 +87,20 @@ static void nvboard_update_output(PinMap *p) {
 }
 
 void nvboard_update() {
+  // --- 更新实时引脚的显示
+  // 在每个时钟周期都更新实时引脚
   for (auto p = rt_pin_map; p != NULL; p = p->next) {
     if (p->is_output) nvboard_update_output(p);
     else nvboard_update_input(p);
   }
-
   update_rt_components(main_renderer);
 
+  // --- 更新非实时引脚的显示
+  // 
   static uint64_t last = 0;
-  uint64_t now = get_time();
-  if (now - last > 1000000 / FPS) {
+  uint64_t now = get_time();  // get_time()的单位是us
+  if (now - last > NON_RT_PIN_REFRESH_INTERVAL_US) {
     last = now;
-
     for (auto p = pin_map; p != NULL; p = p->next) {
       if (p->is_output) nvboard_update_output(p);
       else nvboard_update_input(p);
